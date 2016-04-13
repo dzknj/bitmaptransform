@@ -5,8 +5,9 @@ const ee = new EE();
  function readFile(filePath, callback) {
     fs.readFile(filePath, function(err, data) {
       if(err) console.log(err);
-      console.log(data);
+      console.log('54 byte header infor of bitmap file in hex: ' + data.toString('hex').slice(0,108));
       bitmapHeader(data);
+      transform(data);
       return data;
     });
   };
@@ -44,5 +45,29 @@ headerInfo.paletteStart = yaread.readUInt32LE(offSets.paletteStart);
 console.log(headerInfo);
 return(headerInfo);
 };
+function transform(data) {
+  var newBitmapData = [];
+  for(var i = 0; i < data.length; i++) {
+    data[i] = data.readUInt8(i);
+    newBitmapData.push(data[i]);
+  };
+  for (var i = 54; i < newBitmapData.length; i++) {
+    if(newBitmapData[i] % 2) { // any pixel color that is divisible by 2 with no remainder is given a random color
+      newBitmapData[i] = Math.floor(Math.random() * 255);
+    };
+  };
+  createBitmap(newBitmapData);
+};
+function createBitmap(newBitmapData) {
+  var transformedBitmap = new Buffer(newBitmapData);
+  fs.writeFile("img/transformed-bitmap.bmp", transformedBitmap, function(err) {
+    if(err) {
+      return console.log(err);
+    };
+    console.log("bitmap file has been transformed!");
+  });
+};
 exports.readFile = readFile;
 exports.bitmapHeader = bitmapHeader;
+exports.transform = transform;
+exports.createBitmap = createBitmap;
